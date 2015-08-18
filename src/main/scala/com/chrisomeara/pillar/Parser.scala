@@ -3,6 +3,7 @@ package com.chrisomeara.pillar
 import java.util.Date
 import java.io.InputStream
 import scala.collection.mutable
+import scala.io.Source
 
 object Parser {
   def apply(): Parser = new Parser
@@ -24,7 +25,7 @@ class PartialMigration {
     if (!authoredAt.isEmpty && authoredAtAsLong < 1) errors("authoredAt") = "must be a number greater than zero"
     if (up.isEmpty) errors("up") = "must be present"
 
-    if (!errors.isEmpty) Some(errors.toMap) else None
+    if (errors.nonEmpty) Some(errors.toMap) else None
   }
 
   def authoredAtAsLong: Long = {
@@ -52,26 +53,23 @@ class Parser {
   def parse(resource: InputStream): Migration = {
     val inProgress = new PartialMigration
     var state: ParserState = ParsingAttributes
-    io.Source.fromInputStream(resource).getLines().foreach {
-      line =>
-        line match {
-          case MatchAttribute("authoredAt", authoredAt) =>
-            inProgress.authoredAt = authoredAt.trim
-          case MatchAttribute("description", description) =>
-            inProgress.description = description.trim
-          case MatchAttribute("up", _) =>
-            state = ParsingUp
-          case MatchAttribute("down", _) =>
-            inProgress.down = Some(new mutable.MutableList[String]())
-            state = ParsingDown
-          case cql =>
-            if (!cql.isEmpty) {
-              state match {
-                case ParsingUp => inProgress.up += cql
-                case ParsingDown => inProgress.down.get += cql
-                case other => // ignored
-              }
-            }
+    Source.fromInputStream(resource).getLines().foreach {
+      case MatchAttribute("authoredAt", authoredAt) =>
+        inProgress.authoredAt = authoredAt.trim
+      case MatchAttribute("description", description) =>
+        inProgress.description = description.trim
+      case MatchAttribute("up", _) =>
+        state = ParsingUp
+      case MatchAttribute("down", _) =>
+        inProgress.down = Some(new mutable.MutableList[String]())
+        state = ParsingDown
+      case cql =>
+        if (!cql.isEmpty) {
+          state match {
+            case ParsingUp => inProgress.up += cql
+            case ParsingDown => inProgress.down.get += cql
+            case other => // ignored
+          }
         }
     }
     inProgress.validate match {
