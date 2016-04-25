@@ -42,7 +42,7 @@ trait Migration {
   def executeDownStatement(session: Session)
 
   protected def deleteFromAppliedMigrations(session: Session) {
-    session.execute(new QueryBuilder(session.getCluster).
+    session.execute(QueryBuilder.
       delete().
       from("applied_migrations").
       where(QueryBuilder.eq("authored_at", authoredAt)).
@@ -51,7 +51,7 @@ trait Migration {
   }
 
   private def insertIntoAppliedMigrations(session: Session) {
-    session.execute(new QueryBuilder(session.getCluster).
+    session.execute(QueryBuilder.
       insertInto("applied_migrations").
       value("authored_at", authoredAt).
       value("description", description).

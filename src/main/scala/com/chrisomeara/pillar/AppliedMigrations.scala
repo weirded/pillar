@@ -8,7 +8,7 @@ import java.util.Date
 object AppliedMigrations {
   def apply(session: Session, registry: Registry): AppliedMigrations = {
 
-    val results = session.execute(new QueryBuilder(session.getCluster).select("authored_at", "description").from("applied_migrations"))
+    val results = session.execute(QueryBuilder.select("authored_at", "description").from("applied_migrations"))
     new AppliedMigrations(JavaConversions.asScalaBuffer(results.all()).map {
       row =>
       val date = row.getTimestamp("authored_at")
